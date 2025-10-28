@@ -1,4 +1,4 @@
-# --- FIX: eventlet must be patched before any imports ---
+# --- Eventlet must patch BEFORE any other imports ---
 import eventlet
 eventlet.monkey_patch()
 
@@ -9,6 +9,7 @@ import random
 import string
 import os
 
+# --- Flask & SocketIO setup ---
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'naruto_secret'
 socketio = SocketIO(app, cors_allowed_origins="*")
@@ -16,7 +17,7 @@ socketio = SocketIO(app, cors_allowed_origins="*")
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 rooms = {}
 
-# --- Jutsu and Kekkei Genkai ---
+# --- Jutsu and Kekkei Genkai lists ---
 jutsus = [
     "rasengan", "chidori", "shadow_clone", "fireball_jutsu", "water_dragon",
     "thousand_years_of_death", "rasenshuriken", "gentle_fist", "leaf_hurricane",
@@ -29,7 +30,7 @@ kekkei_genkai = [
     "tenseigan", "wood_release", "ice_release", "lava_release", "magnet_release"
 ]
 
-# --- Type advantages ---
+# --- Type advantage chart ---
 type_chart = {
     "fire": {"beats": "wind", "loses": "water"},
     "water": {"beats": "fire", "loses": "lightning"},
@@ -41,7 +42,7 @@ type_chart = {
     "ninjutsu": {"beats": "taijutsu", "loses": "genjutsu"}
 }
 
-# --- Assign types to each jutsu ---
+# --- Affinity per move ---
 affinity = {
     "rasengan": "wind",
     "chidori": "lightning",
@@ -71,7 +72,7 @@ affinity = {
     "magnet_release": "earth"
 }
 
-# --- Serve static files (png, mp3, css, js, etc.) ---
+# --- Serve static files from root ---
 @app.route('/<path:filename>')
 def serve_file(filename):
     safe_path = safe_join(BASE_DIR, filename)
@@ -80,7 +81,7 @@ def serve_file(filename):
     else:
         abort(404)
 
-# --- Routes ---
+# --- Web routes ---
 @app.route('/')
 def index():
     with open("index.html", "r", encoding="utf-8") as f:
@@ -98,7 +99,7 @@ def game(room_code):
             kekkei_genkai=kekkei_genkai
         )
 
-# --- Helpers ---
+# --- Helper functions ---
 def generate_room_code():
     return ''.join(random.choices(string.ascii_uppercase + string.digits, k=6))
 
@@ -112,9 +113,9 @@ def determine_winner(p1_choice, p2_choice):
     elif type_chart[t1]["loses"] == t2:
         return 2
     else:
-        return 0  # tie if no clear advantage
+        return 0  # neutral tie
 
-# --- Socket.IO Events ---
+# --- Socket.IO events ---
 @socketio.on('create_room')
 def create_room(data):
     nickname = data.get('nickname', 'Player')
@@ -147,7 +148,7 @@ def play(data):
     choice = data['choice']
     nickname = data['nickname']
     room = rooms.get(room_code)
-    if room is None:
+    if not room:
         emit('error', 'Room not found.')
         return
 
@@ -157,6 +158,7 @@ def play(data):
         emit('status', 'Waiting for other player...', room=room_code)
         return
 
+    # --- Both players played ---
     p1, p2 = room['choices']
     result = determine_winner(p1['choice'], p2['choice'])
 
@@ -168,16 +170,18 @@ def play(data):
     winner = p1 if result == 1 else p2
     loser = p2 if result == 1 else p1
 
+    # Increment wins
     if winner['nickname'] in room['players']:
         room['players'][winner['nickname']]['wins'] += 1
 
     room['round'] += 1
     room['choices'] = []
 
-    # Sharingan evolution check
-    if winner['choice'] == "sharingan" and room['players'].get(winner['nickname'], {}).get('wins', 0) >= 5:
+    # Sharingan evolution
+    if winner['choice'] == "sharingan" and room['players'][winner['nickname']]['wins'] >= 5:
         winner['choice'] = "mangekyo_sharingan"
 
+    # Broadcast result to both players
     emit('round_result_display', {
         'winner_name': winner['nickname'],
         'loser_name': loser['nickname'],
@@ -186,7 +190,6 @@ def play(data):
         'round': room['round'] - 1
     }, room=room_code)
 
-# --- Run Server ---
-if __name__ == '__main__':
-    # eventlet fixes for async multiplayer
-    socketio.run(app, host='0.0.0.0', port=5000, allow_unsafe_werkzeug=True)
+# --- Run with Eventlet in Render ---
+if __name__ == "__main__":
+    socketio.run(app, host="0.0.0.0", port=5000)
