@@ -21,6 +21,9 @@
         </section>
 
         <aside class="controls">
+            <!-- START GAME BUTTON (hidden by default) -->
+            <button id="startGameBtn" onclick="startGame()" style="display: none;">START GAME</button>
+
             <div id="choices" class="choices-grid"></div>
             <div id="result" class="result-text"></div>
         </aside>
@@ -30,15 +33,13 @@
     <audio id="main_music" src="/main.mp3" loop autoplay></audio>
     <audio id="personal_effect"></audio>
 
-<script>
+    <script>
         const roomCode = "{{ room_code }}";
         const jutsus = {{ jutsus|tojson }};
         const kekkei = {{ kekkei_genkai|tojson }};
-        
-        // Removed the nickname declaration to fix the Uncaught SyntaxError
+        // nickname handled in main.js
     </script>
     <script src="/socket.io/socket.io.js"></script>
     <script src="/main.js"></script>
 </body>
 </html>
-
