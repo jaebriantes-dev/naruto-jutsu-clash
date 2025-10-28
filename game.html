@@ -8,9 +8,9 @@
 </head>
 <body>
     <div class="top-bar">
-        <img src="/logo.png" class="logo-small" alt="Logo">
+        <img src="/logo.png" class="logo-small" alt="Game Logo">
         <div class="round-display" id="round">Round 1</div>
-        <div id="players" class="players-display">Player 1 vs Player 2</div>
+        <div id="players" class="players-display">Waiting for players...</div>
     </div>
 
     <main class="game-area">
@@ -29,45 +29,6 @@
     <audio id="personal_effect"></audio>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.1/socket.io.min.js"></script>
-    <script>
-        const socket = io();
-        const jutsus = {{ jutsus|tojson }};
-        const kekkei = {{ kekkei_genkai|tojson }};
-        let slot = null;
-        let waiting = false;
-
-        document.addEventListener('click', () => {
-            const m = document.getElementById('main_music');
-            if (m && m.paused) m.play().catch(()=>{});
-        }, { once: true });
-
-        socket.on('start_round', data => showChoices(data.round));
-
-        function showChoices(round) {
-            const container = document.getElementById("choices");
-            container.innerHTML = "";
-            let pool = (round < 50) ? jutsus : kekkei;
-            waiting = false;
-
-            pool.forEach(choice => {
-                const btn = document.createElement("button");
-                btn.innerText = choice.replace(/_/g,' ').replace(/\b\w/g,l=>l.toUpperCase());
-                btn.onclick = () => {
-                    if (waiting) return;
-                    waiting = true;
-                    socket.emit('play', { slot, choice });
-                    document.querySelectorAll('.choices-grid button').forEach(b=>b.disabled=true);
-                };
-                container.appendChild(btn);
-            });
-        }
-
-        socket.on('round_result_display', data => {
-            const r = document.getElementById('result');
-            r.innerHTML = `Winner: ${data.winner_name || "Tie"} — ${data.winner_choice || ""}<br>
-                           Loser: ${data.loser_name || "Tie"} — ${data.loser_choice || ""}`;
-            setTimeout(()=>showChoices(data.round+1),1500);
-        });
-    </script>
+    <script src="/main.js"></script>
 </body>
 </html>
