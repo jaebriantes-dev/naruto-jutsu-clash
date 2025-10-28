@@ -1,89 +1,95 @@
-// --- main.js ---
+// main.js - game front-end logic (2-player version)
 const socket = io();
-let playerNumber = null;
+let playerSlot = null;
 let currentRound = 1;
 let waitingForOpponent = false;
 
-// Unlock music
+const jutsus = [
+    "rasengan","chidori","shadow_clone","fireball_jutsu","water_dragon",
+    "thousand_years_of_death","rasenshuriken","gentle_fist","leaf_hurricane",
+    "dragon_flame","water_wall","shadow_possession","reanimation_jutsu",
+    "hundred_fists","flying_raijin","eight_trigrams"
+];
+
+const kekkei = [
+    "sharingan","mangekyo_sharingan","izanagi","byakugan","rinnegan",
+    "tenseigan","wood_release","ice_release","lava_release","magnet_release"
+];
+
+// --- Play background music on first click ---
 document.addEventListener('click', () => {
-    const audio = document.getElementById('main_music');
-    if (audio && audio.paused) audio.play().catch(() => {});
+    const mainMusic = document.getElementById('main_music');
+    if (mainMusic && mainMusic.paused) mainMusic.play().catch(()=>{});
 }, { once: true });
 
-// Ask for player number
-if (!playerNumber) {
-    playerNumber = prompt("Enter your player number (1 or 2):");
-    if (!["1","2"].includes(playerNumber)) playerNumber = "1";
-}
-
-// Join room automatically
-if (typeof roomCode !== "undefined" && roomCode) {
-    socket.emit("join_game", { playerNumber, room_code: roomCode });
-}
-
-// --- Show move choices ---
-function showChoices(round) {
-    currentRound = round;
-    const container = document.getElementById("choices");
-    container.innerHTML = "";
-    let pool = (round < 50) ? jutsus : kekkei;
-
-    pool.forEach(choice => {
-        const btn = document.createElement("button");
-        btn.className = "choice-btn";
-        btn.innerHTML = choice.replace(/_/g,' ');
-        btn.onclick = () => {
-            if (waitingForOpponent) return;
-            waitingForOpponent = true;
-            setResultText("You selected: " + choice + ". Waiting for opponent...");
-            document.querySelectorAll('.choice-btn').forEach(b => b.disabled = true);
-            socket.emit('play', { room_code: roomCode, choice: choice, playerNumber });
-            showMoveVisual(choice, playerNumber==='1'?'left':'right',200);
-        };
-        container.appendChild(btn);
-    });
-}
-
-function setResultText(txt){
-    const r = document.getElementById("result");
-    if(r) r.innerHTML = txt;
-}
-
-function showMoveVisual(moveName, side='center', size=240){
+// --- Helper functions ---
+function prettifyName(s) { return s.replace(/_/g,' ').replace(/\b\w/g,l=>l.toUpperCase()); }
+function setResultText(txt) { const r=document.getElementById("result"); if(r) r.innerHTML=txt; }
+function showMoveVisual(moveName, side='center', size=240) {
     const layer = document.getElementById('move-layer');
     if(!layer) return;
     const img = document.createElement('img');
     img.src = moveName+'.png';
     img.alt = moveName;
-    img.style.width = size+'px';
-    img.style.height = 'auto';
-    img.style.opacity = 0;
-    img.style.transition = 'opacity 0.3s ease, transform 0.4s ease';
-    if(side==='left') img.style.transform = 'translateX(-120px)';
-    else if(side==='right') img.style.transform = 'translateX(120px)';
+    img.className='move-img';
+    img.style.width=size+'px';
+    img.style.height='auto';
+    img.style.opacity=0;
+    img.style.transition='opacity 0.3s ease, transform 0.4s ease';
+    if(side==='left') img.style.transform='translateX(-120px)';
+    else if(side==='right') img.style.transform='translateX(120px)';
+    else img.style.transform='translateX(0)';
     layer.appendChild(img);
-    requestAnimationFrame(()=>{ img.style.opacity=1; img.style.transform+=' translateY(-10px)'; });
-    setTimeout(()=>{ img.style.opacity=0; setTimeout(()=>img.remove(),400); },2000);
-    try { new Audio(moveName+'.mp3').play().catch(()=>{}); } catch(e){}
+    requestAnimationFrame(()=>{img.style.opacity=1; img.style.transform+=' translateY(-10px)';});
+    setTimeout(()=>{img.style.opacity=0; setTimeout(()=>img.remove(),400);},2000);
+    try{new Audio(moveName+'.mp3').play().catch(()=>{});}catch(e){}
 }
 
-// --- Start Game Button ---
-function startGame(){
-    document.getElementById('startGameBtn').style.display='none';
-    setResultText("Game started!");
-    socket.emit('start_game_manual', { room_code: roomCode });
+// --- Show choices for the current round ---
+function showChoices(round) {
+    currentRound = round;
+    const container=document.getElementById("choices");
+    container.innerHTML="";
+    let pool=(round<50)?jutsus:kekkei;
+    pool.forEach(choice=>{
+        const btn=document.createElement("button");
+        btn.className="choice-btn";
+        btn.innerHTML=prettifyName(choice);
+        btn.onclick=()=>{
+            if(waitingForOpponent) return;
+            waitingForOpponent=true;
+            setResultText("You selected: "+prettifyName(choice)+". Waiting for opponent...");
+            document.querySelectorAll('.choice-btn').forEach(b=>b.disabled=true);
+            socket.emit('play',{player:playerSlot,choice:choice});
+            showMoveVisual(choice, playerSlot==='player1'?'left':'right',200);
+        };
+        container.appendChild(btn);
+    });
 }
 
-// --- Socket events ---
-socket.on('show_start_button', () => {
-    document.getElementById('startGameBtn').style.display='block';
-    setResultText("Both players joined. Click START GAME.");
+// --- Socket.IO events ---
+socket.on('connect',()=>console.log("✅ Connected to server"));
+
+// Get player slot
+socket.emit('get_player_slot');
+socket.on('player_slot', data=>{
+    playerSlot=data.slot;
+    document.getElementById("players").innerText="You are "+prettifyName(data.slot)+". Waiting for other player...";
 });
 
-socket.on('round_result_display', data => {
+// Start round
+socket.on('start_round', data=>{
+    document.getElementById("round").innerText="Round "+data.round;
+    showChoices(data.round);
+});
+
+// Display round results
+socket.on('round_result_display', data=>{
     waitingForOpponent=false;
-    setResultText(`Winner: ${data.winner_choice} | Loser: ${data.loser_choice}`);
+    document.querySelectorAll('.choice-btn').forEach(b=>b.disabled=false);
+    setResultText(`Winner: ${data.winner_name} — ${prettifyName(data.winner_choice)}<br>
+                   Loser: ${data.loser_name} — ${prettifyName(data.loser_choice)}`);
     showMoveVisual(data.winner_choice,'center',260);
     setTimeout(()=>showMoveVisual(data.loser_choice,'center',200),650);
-    setTimeout(()=>showChoices(currentRound+1),1500);
+    setTimeout(()=>showChoices(data.round+1),1500);
 });
