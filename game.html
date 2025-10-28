@@ -2,40 +2,48 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Naruto Ability Clash - Room {{ room_code }}</title>
-
-    <!-- ✅ Absolute path fix for CSS -->
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     <link rel="stylesheet" href="/style.css">
 </head>
-
 <body>
-    <!-- Game Logo -->
-    <div class="logo-container">
-        <img src="/logo.png" alt="Game Logo" class="logo">
+    <div class="top-bar">
+        <img src="/logo.png" class="logo-small" alt="Game Logo">
+        <div class="round-display" id="round">Round 1</div>
+        <div id="players" class="players-display">Waiting for players...</div>
     </div>
 
-    <!-- Room Information -->
-    <h2>Room: {{ room_code }}</h2>
-    <div id="players"></div>
-    <div id="round">Round 1</div>
-    <div id="choices"></div>
-    <div id="result"></div>
+    <main class="game-area">
+        <section id="battlefield" class="battlefield">
+            <!-- battlefield visuals go here -->
+            <div id="move-layer" class="move-layer"></div>
+            <div id="result-layer" class="result-layer"></div>
+        </section>
 
-    <!-- ✅ Main Game Music -->
+        <aside class="controls">
+            <div id="choices" class="choices-grid"></div>
+            <div id="result" class="result-text"></div>
+        </aside>
+    </main>
+
+    <!-- background and effect sounds -->
     <audio id="main_music" src="/main.mp3" loop autoplay></audio>
+    <audio id="personal_effect"></audio>
 
-    <!-- ✅ Battle Effects (played dynamically from JS) -->
-    <audio id="effect"></audio>
-
-    <!-- Game Data for Script -->
     <script>
         const roomCode = "{{ room_code }}";
         const jutsus = {{ jutsus|tojson }};
         const kekkei = {{ kekkei_genkai|tojson }};
+
+        // Save nickname for reuse (from index.html)
+        if (!localStorage.getItem("nickname")) {
+            const n = prompt("Enter your nickname:") || "Player";
+            localStorage.setItem("nickname", n);
+        }
+
+        const nickname = localStorage.getItem("nickname");
     </script>
 
-    <!-- ✅ Load Socket.IO and main.js from absolute path -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.1/socket.io.min.js"></script>
     <script src="/main.js"></script>
 </body>
