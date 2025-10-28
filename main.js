@@ -191,3 +191,4 @@ socket.on('round_result_display', data => {
 socket.on('error', msg => {
     setResultText("Error: " + msg);
 });
+
