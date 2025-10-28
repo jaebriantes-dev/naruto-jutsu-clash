@@ -2,15 +2,15 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Naruto Ability Clash - Room {{ room_code }}</title>
+    <title>Naruto Ability Clash</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <link rel="stylesheet" href="/style.css">
 </head>
 <body>
     <div class="top-bar">
-        <img src="/logo.png" class="logo-small" alt="Game Logo">
+        <img src="/logo.png" class="logo-small" alt="Logo">
         <div class="round-display" id="round">Round 1</div>
-        <div id="players" class="players-display">Waiting for players...</div>
+        <div id="players" class="players-display">Player 1 vs Player 2</div>
     </div>
 
     <main class="game-area">
@@ -20,9 +20,6 @@
         </section>
 
         <aside class="controls">
-            <!-- START GAME BUTTON -->
-            <button id="startGameBtn" onclick="startGame()" style="display: none;">START GAME</button>
-
             <div id="choices" class="choices-grid"></div>
             <div id="result" class="result-text"></div>
         </aside>
@@ -31,12 +28,46 @@
     <audio id="main_music" src="/main.mp3" loop autoplay></audio>
     <audio id="personal_effect"></audio>
 
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.1/socket.io.min.js"></script>
     <script>
-        const roomCode = "{{ room_code }}";
+        const socket = io();
         const jutsus = {{ jutsus|tojson }};
         const kekkei = {{ kekkei_genkai|tojson }};
+        let slot = null;
+        let waiting = false;
+
+        document.addEventListener('click', () => {
+            const m = document.getElementById('main_music');
+            if (m && m.paused) m.play().catch(()=>{});
+        }, { once: true });
+
+        socket.on('start_round', data => showChoices(data.round));
+
+        function showChoices(round) {
+            const container = document.getElementById("choices");
+            container.innerHTML = "";
+            let pool = (round < 50) ? jutsus : kekkei;
+            waiting = false;
+
+            pool.forEach(choice => {
+                const btn = document.createElement("button");
+                btn.innerText = choice.replace(/_/g,' ').replace(/\b\w/g,l=>l.toUpperCase());
+                btn.onclick = () => {
+                    if (waiting) return;
+                    waiting = true;
+                    socket.emit('play', { slot, choice });
+                    document.querySelectorAll('.choices-grid button').forEach(b=>b.disabled=true);
+                };
+                container.appendChild(btn);
+            });
+        }
+
+        socket.on('round_result_display', data => {
+            const r = document.getElementById('result');
+            r.innerHTML = `Winner: ${data.winner_name || "Tie"} — ${data.winner_choice || ""}<br>
+                           Loser: ${data.loser_name || "Tie"} — ${data.loser_choice || ""}`;
+            setTimeout(()=>showChoices(data.round+1),1500);
+        });
     </script>
-    <script src="https://cdn.jsdelivr.net/npm/socket.io-client@4.7.2/dist/socket.io.min.js"></script>
-    <script src="/main.js"></script>
 </body>
 </html>
