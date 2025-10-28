@@ -61,7 +61,6 @@ function showMoveVisual(moveName, side = 'center', size = 240) {
     img.style.opacity = 0;
     img.style.transition = 'opacity 0.3s ease, transform 0.4s ease';
 
-    // Position side
     if (side === 'left') img.style.transform = 'translateX(-120px)';
     else if (side === 'right') img.style.transform = 'translateX(120px)';
     else img.style.transform = 'translateX(0)';
@@ -77,7 +76,6 @@ function showMoveVisual(moveName, side = 'center', size = 240) {
         setTimeout(() => img.remove(), 400);
     }, 2000);
 
-    // Sound
     try {
         const sfx = new Audio(moveName + '.mp3');
         sfx.volume = 0.9;
@@ -131,6 +129,7 @@ socket.on('room_joined', data => {
     room = data.room_code;
     const p = document.getElementById("players");
     p.innerText = `Players: ${data.players.join(' vs ')}`;
+    // ❌ Automatic game start removed
 });
 
 // Waiting status
@@ -152,19 +151,14 @@ socket.on('round_result_display', data => {
     setResultText(`Winner: ${data.winner_name} — ${prettifyName(data.winner_choice)}<br>
                    Loser: ${data.loser_name} — ${prettifyName(data.loser_choice)}`);
 
-    // Visuals
     showMoveVisual(data.winner_choice, 'center', 260);
     setTimeout(()=> showMoveVisual(data.loser_choice, 'center', 200), 650);
 
-    // Audio feedback
     if (nickname === data.winner_name) new Audio("winner.mp3").play().catch(()=>{});
     else if (nickname === data.loser_name) new Audio("defeated.mp3").play().catch(()=>{});
     else new Audio("tie.mp3").play().catch(()=>{});
 
-    // Icons
     showResultIcons(data.winner_name, data.loser_name);
-
-    // Next round
     setTimeout(()=> showChoices(data.round + 1), 1500);
 });
 
@@ -174,6 +168,26 @@ socket.on('error', msg => setResultText("Error: " + msg));
 // === NEW: Game Start/Start Round Handler ===
 socket.on('start_round', data => {
     document.getElementById("round").innerText = `Round ${data.round}`;
-    // This calls the function to display the Jutsus (choices)
     showChoices(data.round); 
+});
+
+// --- NEW: Start Game Button Functionality ---
+
+// Called when host clicks the start button
+function startGame() {
+    const btn = document.getElementById('startGameBtn');
+    if (btn) btn.style.display = 'none';
+    setResultText("The host has started the game!");
+    socket.emit('start_game_manual', { room_code: room });
+}
+
+// Show start button only to host
+socket.on('show_start_button', () => {
+    const btn = document.getElementById('startGameBtn');
+    if (btn) {
+        btn.style.display = 'block';
+        setResultText("Opponent joined. Click START GAME when ready!");
+    }
+    // Remove previous status handler to prevent conflicts
+    socket.off('status'); 
 });
