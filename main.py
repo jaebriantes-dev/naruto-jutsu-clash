@@ -1,3 +1,7 @@
+# --- FIX: eventlet must be patched before any imports ---
+import eventlet
+eventlet.monkey_patch()
+
 from flask import Flask, render_template_string, send_from_directory, abort
 from flask_socketio import SocketIO, join_room, emit
 from werkzeug.utils import safe_join
@@ -67,7 +71,7 @@ affinity = {
     "magnet_release": "earth"
 }
 
-# Serve static files from repo root
+# --- Serve static files (png, mp3, css, js, etc.) ---
 @app.route('/<path:filename>')
 def serve_file(filename):
     safe_path = safe_join(BASE_DIR, filename)
@@ -76,7 +80,7 @@ def serve_file(filename):
     else:
         abort(404)
 
-# Routes
+# --- Routes ---
 @app.route('/')
 def index():
     with open("index.html", "r", encoding="utf-8") as f:
@@ -94,7 +98,7 @@ def game(room_code):
             kekkei_genkai=kekkei_genkai
         )
 
-# Helpers
+# --- Helpers ---
 def generate_room_code():
     return ''.join(random.choices(string.ascii_uppercase + string.digits, k=6))
 
@@ -110,12 +114,11 @@ def determine_winner(p1_choice, p2_choice):
     else:
         return 0  # tie if no clear advantage
 
-# Socket.IO events
+# --- Socket.IO Events ---
 @socketio.on('create_room')
 def create_room(data):
     nickname = data.get('nickname', 'Player')
     room_code = generate_room_code()
-    # store players as dict for wins tracking, but emit list for clients
     rooms[room_code] = {
         'players': {nickname: {'wins': 0}},
         'choices': [],
@@ -131,7 +134,6 @@ def join_room_event(data):
     if room_code in rooms and len(rooms[room_code]['players']) < 2:
         rooms[room_code]['players'][nickname] = {'wins': 0}
         join_room(room_code)
-        # IMPORTANT: send a list of player names (not the internal dict)
         emit('room_joined', {
             'room_code': room_code,
             'players': list(rooms[room_code]['players'].keys())
@@ -166,7 +168,6 @@ def play(data):
     winner = p1 if result == 1 else p2
     loser = p2 if result == 1 else p1
 
-    # increment winner's wins
     if winner['nickname'] in room['players']:
         room['players'][winner['nickname']]['wins'] += 1
 
@@ -177,8 +178,6 @@ def play(data):
     if winner['choice'] == "sharingan" and room['players'].get(winner['nickname'], {}).get('wins', 0) >= 5:
         winner['choice'] = "mangekyo_sharingan"
 
-    # personal result events (optional) - you can expand these if needed
-    # broadcast display
     emit('round_result_display', {
         'winner_name': winner['nickname'],
         'loser_name': loser['nickname'],
@@ -187,6 +186,7 @@ def play(data):
         'round': room['round'] - 1
     }, room=room_code)
 
+# --- Run Server ---
 if __name__ == '__main__':
-    # if using gunicorn with eventlet you won't need allow_unsafe_werkzeug
+    # eventlet fixes for async multiplayer
     socketio.run(app, host='0.0.0.0', port=5000, allow_unsafe_werkzeug=True)
