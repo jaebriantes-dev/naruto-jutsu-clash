@@ -1,119 +1,168 @@
-/* style.css - updated visuals for battlefield */
-* { box-sizing: border-box; }
+/* === NARUTO ABILITY CLASH STYLE === */
+
 body {
-    font-family: "Segoe UI", Roboto, Arial, sans-serif;
-    margin: 0;
-    padding: 0;
-    background: linear-gradient(#0f172a, #021024); /* dark battlefield feel */
-    color: #eef2ff;
-    min-height: 100vh;
+  margin: 0;
+  font-family: 'Poppins', sans-serif;
+  background: radial-gradient(circle at top, #0a0f1f 0%, #020617 100%);
+  color: #e6f2ff;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-height: 100vh;
+  overflow-x: hidden;
 }
 
-/* top bar */
 .top-bar {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 16px;
-    padding: 12px 18px;
-    background: rgba(0,0,0,0.25);
-    backdrop-filter: blur(4px);
-    border-bottom: 1px solid rgba(255,255,255,0.04);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 90%;
+  max-width: 1200px;
+  padding: 10px 20px;
+  margin-top: 10px;
+  background: rgba(0, 0, 0, 0.4);
+  border-radius: 12px;
+  box-shadow: 0 0 20px rgba(0, 255, 255, 0.1);
 }
-.logo-small { width: 140px; height: auto; }
-.players-display { font-size: 14px; opacity: 0.9; }
+
+.logo-small {
+  width: 100px;
+  filter: drop-shadow(0 0 12px #00ffff);
+}
+
 .round-display {
-    font-weight: 700;
-    font-size: 18px;
-    text-align: center;
-    padding: 6px 14px;
-    border-radius: 8px;
-    background: rgba(255,255,255,0.04);
+  font-size: 1.2rem;
+  font-weight: 700;
+  text-shadow: 0 0 10px #0ff;
 }
 
-/* layout */
+.players-display {
+  font-size: 1rem;
+  opacity: 0.9;
+}
+
 .game-area {
-    display: grid;
-    grid-template-columns: 1fr 360px;
-    gap: 12px;
-    padding: 20px;
-    align-items: start;
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  align-items: flex-start;
+  margin-top: 40px;
+  width: 100%;
+  max-width: 1100px;
+  gap: 30px;
 }
 
-/* battlefield */
 .battlefield {
-    min-height: 520px;
-    background-image: url(''); /* optional: place a battlefield bg image in folder and put filename here */
-    background-color: rgba(10,14,24,0.6);
-    border-radius: 12px;
-    padding: 20px;
-    position: relative;
-    overflow: hidden;
-    border: 1px solid rgba(255,255,255,0.03);
+  position: relative;
+  flex: 1;
+  height: 420px;
+  border-radius: 18px;
+  background: linear-gradient(145deg, rgba(25, 35, 60, 0.9), rgba(5, 10, 25, 0.9));
+  box-shadow: 0 0 20px rgba(0, 255, 255, 0.1);
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
-/* layer for move images */
-.move-layer {
-    position: absolute;
-    inset: 0;
-    display:flex;
-    align-items: center;
-    justify-content: center;
-    gap: 40px;
-    pointer-events: none;
-}
-.move-img {
-    border-radius: 8px;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.6);
-    transform-origin: center;
+.move-layer, .result-layer {
+  position: absolute;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
 }
 
-/* result icons */
 .result-layer {
-    position: absolute;
-    inset: 0;
-    display:flex;
-    align-items: flex-end;
-    justify-content: center;
-    pointer-events: none;
+  font-size: 2rem;
+  font-weight: 800;
+  color: #00ffff;
+  text-shadow: 0 0 20px #00ffff, 0 0 40px #00ffff;
+  opacity: 0;
+  transition: opacity 0.5s ease;
 }
-.status-icon { width: 120px; opacity: 0.95; }
 
-/* controls (choices) */
 .controls {
-    padding: 12px;
+  width: 320px;
+  background: rgba(0, 0, 0, 0.35);
+  padding: 20px;
+  border-radius: 16px;
+  box-shadow: 0 0 15px rgba(0, 255, 255, 0.1);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
+
 .choices-grid {
-    display: grid;
-    grid-template-columns: repeat(1, 1fr);
-    gap: 8px;
-    max-height: 420px;
-    overflow-y: auto;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+  margin-bottom: 20px;
 }
-.choice-btn {
-    background: linear-gradient(90deg,#1f2937,#0b1220);
-    border: 1px solid rgba(255,255,255,0.04);
-    color: #e6f2ff;
-    padding: 10px;
-    border-radius: 8px;
-    cursor: pointer;
-    text-align: left;
-    transition: transform 120ms ease, box-shadow 120ms ease;
-    font-weight: 600;
-}
-.choice-btn:hover { transform: translateY(-3px); box-shadow: 0 6px 20px rgba(0,0,0,0.6); }
-.choice-btn:disabled { opacity: 0.45; cursor: not-allowed; transform: none; }
 
-/* result text */
+.choices-grid button {
+  background: linear-gradient(145deg, #111827, #1f2937);
+  border: 1px solid rgba(0, 255, 255, 0.2);
+  color: #e0f7ff;
+  padding: 12px 8px;
+  border-radius: 10px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-shadow: 0 0 8px rgba(0, 255, 255, 0.4);
+}
+
+.choices-grid button:hover {
+  background: linear-gradient(145deg, #00bcd4, #008ba3);
+  color: #fff;
+  box-shadow: 0 0 10px #00ffff;
+  transform: scale(1.05);
+}
+
 .result-text {
-    margin-top: 12px;
-    background: rgba(0,0,0,0.25);
-    padding: 10px;
-    border-radius: 8px;
+  font-size: 1.3rem;
+  font-weight: 600;
+  text-align: center;
+  text-shadow: 0 0 12px #00ffff;
+  animation: fadeIn 1s ease;
 }
 
-/* responsive */
-@media (max-width: 900px) {
-    .game-area { grid-template-columns: 1fr; }
-    .controls { order: 2; }
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* --- Winner/Loser overlays --- */
+#result-layer.show-winner {
+  color: #00ff99;
+  text-shadow: 0 0 25px #00ff99, 0 0 40px #00ff99;
+  opacity: 1;
+}
+#result-layer.show-loser {
+  color: #ff2b2b;
+  text-shadow: 0 0 25px #ff2b2b, 0 0 40px #ff2b2b;
+  opacity: 1;
+}
+#result-layer.show-tie {
+  color: #ffaa00;
+  text-shadow: 0 0 25px #ffaa00, 0 0 40px #ffaa00;
+  opacity: 1;
+}
+
+/* --- Mobile support --- */
+@media (max-width: 768px) {
+  .game-area {
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
+  }
+  .controls {
+    width: 90%;
+  }
+  .battlefield {
+    width: 90%;
+    height: 300px;
+  }
 }
