@@ -15,13 +15,12 @@
 
     <main class="game-area">
         <section id="battlefield" class="battlefield">
-            <!-- battlefield visuals go here -->
             <div id="move-layer" class="move-layer"></div>
             <div id="result-layer" class="result-layer"></div>
         </section>
 
         <aside class="controls">
-            <!-- START GAME BUTTON (hidden by default) -->
+            <!-- START GAME BUTTON -->
             <button id="startGameBtn" onclick="startGame()" style="display: none;">START GAME</button>
 
             <div id="choices" class="choices-grid"></div>
@@ -29,7 +28,6 @@
         </aside>
     </main>
 
-    <!-- background and effect sounds -->
     <audio id="main_music" src="/main.mp3" loop autoplay></audio>
     <audio id="personal_effect"></audio>
 
@@ -37,10 +35,7 @@
         const roomCode = "{{ room_code }}";
         const jutsus = {{ jutsus|tojson }};
         const kekkei = {{ kekkei_genkai|tojson }};
-        // nickname handled in main.js
     </script>
-
-    <!-- USE FLASK-SOCKETIO CLIENT FOR COMPATIBILITY -->
     <script src="https://cdn.jsdelivr.net/npm/socket.io-client@4.7.2/dist/socket.io.min.js"></script>
     <script src="/main.js"></script>
 </body>
