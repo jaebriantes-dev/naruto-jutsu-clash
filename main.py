@@ -1,4 +1,4 @@
-from flask import Flask, render_template_string, send_from_directory
+from flask import Flask, render_template_string, send_from_directory, safe_join, abort
 from flask_socketio import SocketIO, join_room, emit
 import random
 import string
@@ -66,26 +66,18 @@ affinity = {
     "magnet_release": "earth"
 }
 
-def generate_room_code():
-    return ''.join(random.choices(string.ascii_uppercase + string.digits, k=6))
 
-def determine_winner(p1_choice, p2_choice):
-    if p1_choice == p2_choice:
-        return 0  # tie
-    t1 = affinity[p1_choice]
-    t2 = affinity[p2_choice]
-
-    if type_chart[t1]["beats"] == t2:
-        return 1
-    elif type_chart[t1]["loses"] == t2:
-        return 2
-    else:
-        return 0  # no advantage, tie
-
+# ✅ STEP 2: Serve all static files (CSS, JS, images, sounds) from the same directory
 @app.route('/<path:filename>')
 def serve_file(filename):
-    return send_from_directory(BASE_DIR, filename)
+    safe_path = safe_join(BASE_DIR, filename)
+    if os.path.exists(safe_path):
+        return send_from_directory(BASE_DIR, filename)
+    else:
+        abort(404)
 
+
+# --- Routes ---
 @app.route('/')
 def index():
     with open("index.html", "r", encoding="utf-8") as f:
@@ -96,7 +88,25 @@ def game(room_code):
     if room_code not in rooms:
         return "Room not found!", 404
     with open("game.html", "r", encoding="utf-8") as f:
-        return render_template_string(f.read(), room_code=room_code, jutsus=jutsus, kekkei_genkai=kekkei_genkai)
+        return render_template_string(f.read(),
+            room_code=room_code, jutsus=jutsus, kekkei_genkai=kekkei_genkai)
+
+
+# --- Socket.IO Events ---
+def generate_room_code():
+    return ''.join(random.choices(string.ascii_uppercase + string.digits, k=6))
+
+def determine_winner(p1_choice, p2_choice):
+    if p1_choice == p2_choice:
+        return 0  # tie
+    t1 = affinity[p1_choice]
+    t2 = affinity[p2_choice]
+    if type_chart[t1]["beats"] == t2:
+        return 1
+    elif type_chart[t1]["loses"] == t2:
+        return 2
+    else:
+        return 0
 
 @socketio.on('create_room')
 def create_room(data):
@@ -113,7 +123,9 @@ def join_room_event(data):
     if room_code in rooms and len(rooms[room_code]['players']) < 2:
         rooms[room_code]['players'][nickname] = {'wins': 0}
         join_room(room_code)
-        emit('room_joined', {'room_code': room_code, 'players': list(rooms[room_code]['players'].keys())}, room=room_code)
+        emit('room_joined',
+             {'room_code': room_code, 'players': list(rooms[room_code]['players'].keys())},
+             room=room_code)
     else:
         emit('error', 'Room full or does not exist.')
 
@@ -156,5 +168,8 @@ def play(data):
         'round': room['round'] - 1
     }, room=room_code)
 
+
+# --- Run ---
 if __name__ == '__main__':
+    # allow_unsafe_werkzeug only if not using gunicorn
     socketio.run(app, host='0.0.0.0', port=5000, allow_unsafe_werkzeug=True)
