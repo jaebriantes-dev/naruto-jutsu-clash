@@ -132,13 +132,23 @@ def create_room(data):
 def join_room_event(data):
     nickname = data.get('nickname', 'Player')
     room_code = data.get('room_code')
+
     if room_code in rooms and len(rooms[room_code]['players']) < 2:
+        # 1. Register the new player and join the room
         rooms[room_code]['players'][nickname] = {'wins': 0}
         join_room(room_code)
+
         emit('room_joined', {
             'room_code': room_code,
             'players': list(rooms[room_code]['players'].keys())
         }, room=room_code)
+
+        if len(rooms[room_code]['players']) == 2:
+            # Update status for all players
+            emit('status', "Game starting! Round 1.", room=room_code)
+
+            emit('start_round', {'round': rooms[room_code]['round']}, room=room_code)
+
     else:
         emit('error', 'Room full or does not exist.')
 
@@ -193,3 +203,4 @@ def play(data):
 # --- Run with Eventlet in Render ---
 if __name__ == "__main__":
     socketio.run(app, host="0.0.0.0", port=5000)
+
