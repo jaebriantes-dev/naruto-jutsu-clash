@@ -131,7 +131,6 @@ socket.on('room_joined', data => {
     room = data.room_code;
     const p = document.getElementById("players");
     p.innerText = `Players: ${data.players.join(' vs ')}`;
-    if (data.players.length === 2) showChoices(1);
 });
 
 // Waiting status
@@ -171,3 +170,10 @@ socket.on('round_result_display', data => {
 
 // Error event
 socket.on('error', msg => setResultText("Error: " + msg));
+
+// === NEW: Game Start/Start Round Handler ===
+socket.on('start_round', data => {
+    document.getElementById("round").innerText = `Round ${data.round}`;
+    // This calls the function to display the Jutsus (choices)
+    showChoices(data.round); 
+});
