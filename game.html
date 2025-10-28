@@ -39,7 +39,9 @@
         const kekkei = {{ kekkei_genkai|tojson }};
         // nickname handled in main.js
     </script>
-    <script src="/socket.io/socket.io.js"></script>
+
+    <!-- USE FLASK-SOCKETIO CLIENT FOR COMPATIBILITY -->
+    <script src="https://cdn.jsdelivr.net/npm/socket.io-client@4.7.2/dist/socket.io.min.js"></script>
     <script src="/main.js"></script>
 </body>
 </html>
