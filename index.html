@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Naruto Jutsu Clash</title>
+  <link rel="stylesheet" href="style.css">
+  <style>
+    body {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      background: linear-gradient(#0f172a, #021024);
+      color: #e6f2ff;
+      text-align: center;
+    }
+    .logo {
+      width: 260px;
+      margin-bottom: 20px;
+    }
+    .menu-box {
+      background: rgba(0,0,0,0.25);
+      padding: 24px 28px;
+      border-radius: 14px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+      width: 320px;
+    }
+    input {
+      width: 100%;
+      padding: 10px;
+      margin: 6px 0;
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 6px;
+      background: rgba(255,255,255,0.06);
+      color: #fff;
+      outline: none;
+    }
+    button {
+      width: 100%;
+      padding: 10px;
+      margin-top: 8px;
+      border: none;
+      border-radius: 6px;
+      background: linear-gradient(90deg,#1f2937,#0b1220);
+      color: #fff;
+      font-weight: 600;
+      cursor: pointer;
+      transition: transform 0.1s ease, box-shadow 0.1s ease;
+    }
+    button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+    }
+    small { opacity: 0.8; }
+  </style>
+</head>
+<body>
+  <img src="logo.png" alt="Logo" class="logo">
+  <div class="menu-box">
+    <h2>Naruto Jutsu Clash</h2>
+    <input type="text" id="nickname" placeholder="Enter your nickname">
+    <input type="text" id="room_code" placeholder="Enter room code to join (optional)">
+    <button onclick="createRoom()">Create Room</button>
+    <button onclick="joinRoom()">Join Room</button>
+    <small>Round 50 unlocks Kekkei Genkai power!</small>
+  </div>
+
+  <audio id="menu_music" src="menu.mp3" loop autoplay></audio>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.1/socket.io.min.js"></script>
+  <script>
+    const socket = io();
+    document.addEventListener('click', () => {
+      const audio = document.getElementById('menu_music');
+      if (audio && audio.paused) audio.play().catch(()=>{});
+    }, { once: true });
+
+    function createRoom() {
+      const nickname = document.getElementById("nickname").value || "Player";
+      socket.emit('create_room', { nickname });
+      socket.on('room_created', data => {
+        window.location.href = `/game/${data.room_code}`;
+      });
+    }
+
+    function joinRoom() {
+      const nickname = document.getElementById("nickname").value || "Player";
+      const room_code = document.getElementById("room_code").value;
+      if (!room_code) return alert("Enter a room code first!");
+      socket.emit('join_room', { nickname, room_code });
+      socket.on('room_joined', data => {
+        window.location.href = `/game/${data.room_code}`;
+      });
+      socket.on('error', msg => alert(msg));
+    }
+  </script>
+</body>
+</html>
