@@ -2,7 +2,7 @@
 import eventlet
 eventlet.monkey_patch()
 
-from flask import Flask, render_template_string, send_from_directory, abort
+from flask import Flask, render_template_string, send_from_directory, abort, request
 from flask_socketio import SocketIO, join_room, emit
 from werkzeug.utils import safe_join
 import random
@@ -121,9 +121,10 @@ def create_room(data):
     nickname = data.get('nickname', 'Player')
     room_code = generate_room_code()
     rooms[room_code] = {
-        'players': {nickname: {'wins': 0}},
+        'players': {nickname: {'wins': 0, 'sid': request.sid}},  # store sid
         'choices': [],
-        'round': 1
+        'round': 1,
+        'host': nickname
     }
     join_room(room_code)
     emit('room_created', {'room_code': room_code})
@@ -134,24 +135,38 @@ def join_room_event(data):
     room_code = data.get('room_code')
 
     if room_code in rooms and len(rooms[room_code]['players']) < 2:
-        # 1. Register the new player and join the room
-        rooms[room_code]['players'][nickname] = {'wins': 0}
+        is_host = len(rooms[room_code]['players']) == 1  # second player joining
+        rooms[room_code]['players'][nickname] = {'wins': 0, 'sid': request.sid}
         join_room(room_code)
+
+        # Update host in case it was empty
+        if 'host' not in rooms[room_code] or not rooms[room_code]['host']:
+            rooms[room_code]['host'] = nickname if is_host else list(rooms[room_code]['players'].keys())[0]
 
         emit('room_joined', {
             'room_code': room_code,
             'players': list(rooms[room_code]['players'].keys())
         }, room=room_code)
 
+        # Show start button only to host
         if len(rooms[room_code]['players']) == 2:
-            # Update status for all players
-            emit('status', "Game starting! Round 1.", room=room_code)
-
-            emit('start_round', {'round': rooms[room_code]['round']}, room=room_code)
-
+            host_sid = rooms[room_code]['players'][rooms[room_code]['host']]['sid']
+            emit('show_start_button', to=host_sid)
     else:
         emit('error', 'Room full or does not exist.')
 
+# --- Manual start game ---
+@socketio.on('start_game_manual')
+def start_game_manual(data):
+    room_code = data['room_code']
+    room = rooms.get(room_code)
+    if not room or len(room['players']) < 2:
+        return  # Cannot start without 2 players
+
+    emit('status', "Game starting! Round 1. Select your Jutsu!", room=room_code)
+    emit('start_round', {'round': room['round']}, room=room_code)
+
+# --- Player move ---
 @socketio.on('play')
 def play(data):
     room_code = data['room_code']
@@ -191,7 +206,6 @@ def play(data):
     if winner['choice'] == "sharingan" and room['players'][winner['nickname']]['wins'] >= 5:
         winner['choice'] = "mangekyo_sharingan"
 
-    # Broadcast result to both players
     emit('round_result_display', {
         'winner_name': winner['nickname'],
         'loser_name': loser['nickname'],
@@ -203,4 +217,3 @@ def play(data):
 # --- Run with Eventlet in Render ---
 if __name__ == "__main__":
     socketio.run(app, host="0.0.0.0", port=5000)
-
