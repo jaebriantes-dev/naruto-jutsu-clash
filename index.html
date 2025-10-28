@@ -4,7 +4,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Naruto Jutsu Clash</title>
-  <link rel="stylesheet" href="style.css">
+  <!-- ✅ Absolute paths for Render deployment -->
+  <link rel="stylesheet" href="/style.css">
   <style>
     body {
       display: flex;
@@ -15,10 +16,12 @@
       background: linear-gradient(#0f172a, #021024);
       color: #e6f2ff;
       text-align: center;
+      font-family: 'Poppins', sans-serif;
     }
     .logo {
       width: 260px;
       margin-bottom: 20px;
+      user-select: none;
     }
     .menu-box {
       background: rgba(0,0,0,0.25);
@@ -56,8 +59,11 @@
     small { opacity: 0.8; }
   </style>
 </head>
+
 <body>
-  <img src="logo.png" alt="Logo" class="logo">
+  <!-- ✅ Serve logo from root, not relative -->
+  <img src="/logo.png" alt="Logo" class="logo">
+  
   <div class="menu-box">
     <h2>Naruto Jutsu Clash</h2>
     <input type="text" id="nickname" placeholder="Enter your nickname">
@@ -67,34 +73,42 @@
     <small>Round 50 unlocks Kekkei Genkai power!</small>
   </div>
 
-  <audio id="menu_music" src="menu.mp3" loop autoplay></audio>
+  <!-- ✅ Menu music (absolute path) -->
+  <audio id="menu_music" src="/menu.mp3" loop autoplay></audio>
 
+  <!-- ✅ Socket.IO -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.1/socket.io.min.js"></script>
+
   <script>
     const socket = io();
+    
+    // ✅ Allow user interaction before playing audio (for Chrome)
     document.addEventListener('click', () => {
       const audio = document.getElementById('menu_music');
       if (audio && audio.paused) audio.play().catch(()=>{});
     }, { once: true });
 
     function createRoom() {
-      const nickname = document.getElementById("nickname").value || "Player";
+      const nickname = document.getElementById("nickname").value.trim() || "Player";
       socket.emit('create_room', { nickname });
-      socket.on('room_created', data => {
+      socket.once('room_created', data => {
         window.location.href = `/game/${data.room_code}`;
       });
     }
 
     function joinRoom() {
-      const nickname = document.getElementById("nickname").value || "Player";
-      const room_code = document.getElementById("room_code").value;
+      const nickname = document.getElementById("nickname").value.trim() || "Player";
+      const room_code = document.getElementById("room_code").value.trim().toUpperCase();
       if (!room_code) return alert("Enter a room code first!");
       socket.emit('join_room', { nickname, room_code });
-      socket.on('room_joined', data => {
+      socket.once('room_joined', data => {
         window.location.href = `/game/${data.room_code}`;
       });
-      socket.on('error', msg => alert(msg));
+      socket.once('error', msg => alert(msg));
     }
+
+    socket.on('connect', () => console.log("✅ Connected to server"));
+    socket.on('disconnect', () => console.warn("⚠️ Disconnected from server"));
   </script>
 </body>
 </html>
