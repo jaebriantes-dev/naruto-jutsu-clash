@@ -1,219 +1,67 @@
-# --- Eventlet must patch BEFORE any other imports ---
 import eventlet
 eventlet.monkey_patch()
 
-from flask import Flask, render_template_string, send_from_directory, abort, request
-from flask_socketio import SocketIO, join_room, emit
-from werkzeug.utils import safe_join
-import random
-import string
+from flask import Flask, render_template_string, send_from_directory, abort
+from flask_socketio import SocketIO, emit
 import os
 
-# --- Flask & SocketIO setup ---
 app = Flask(__name__)
-app.config['SECRET_KEY'] = 'naruto_secret'
+app.config['SECRET_KEY']='naruto_secret'
 socketio = SocketIO(app, cors_allowed_origins="*")
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 rooms = {}
 
-# --- Jutsu and Kekkei Genkai lists ---
-jutsus = [
-    "rasengan", "chidori", "shadow_clone", "fireball_jutsu", "water_dragon",
-    "thousand_years_of_death", "rasenshuriken", "gentle_fist", "leaf_hurricane",
-    "dragon_flame", "water_wall", "shadow_possession", "reanimation_jutsu",
-    "hundred_fists", "flying_raijin", "eight_trigrams"
-]
+jutsus = ["rasengan","chidori","shadow_clone","fireball_jutsu","water_dragon","thousand_years_of_death","rasenshuriken","gentle_fist","leaf_hurricane","dragon_flame","water_wall","shadow_possession","reanimation_jutsu","hundred_fists","flying_raijin","eight_trigrams"]
+kekkei_genkai = ["sharingan","mangekyo_sharingan","izanagi","byakugan","rinnegan","tenseigan","wood_release","ice_release","lava_release","magnet_release"]
 
-kekkei_genkai = [
-    "sharingan", "mangekyo_sharingan", "izanagi", "byakugan", "rinnegan",
-    "tenseigan", "wood_release", "ice_release", "lava_release", "magnet_release"
-]
-
-# --- Type advantage chart ---
-type_chart = {
-    "fire": {"beats": "wind", "loses": "water"},
-    "water": {"beats": "fire", "loses": "lightning"},
-    "lightning": {"beats": "water", "loses": "earth"},
-    "earth": {"beats": "lightning", "loses": "wind"},
-    "wind": {"beats": "earth", "loses": "fire"},
-    "taijutsu": {"beats": "genjutsu", "loses": "ninjutsu"},
-    "genjutsu": {"beats": "ninjutsu", "loses": "taijutsu"},
-    "ninjutsu": {"beats": "taijutsu", "loses": "genjutsu"}
-}
-
-# --- Affinity per move ---
-affinity = {
-    "rasengan": "wind",
-    "chidori": "lightning",
-    "shadow_clone": "ninjutsu",
-    "fireball_jutsu": "fire",
-    "water_dragon": "water",
-    "thousand_years_of_death": "taijutsu",
-    "rasenshuriken": "lightning",
-    "gentle_fist": "taijutsu",
-    "leaf_hurricane": "taijutsu",
-    "dragon_flame": "fire",
-    "water_wall": "water",
-    "shadow_possession": "genjutsu",
-    "reanimation_jutsu": "ninjutsu",
-    "hundred_fists": "taijutsu",
-    "flying_raijin": "wind",
-    "eight_trigrams": "wind",
-    "sharingan": "genjutsu",
-    "mangekyo_sharingan": "genjutsu",
-    "izanagi": "genjutsu",
-    "byakugan": "taijutsu",
-    "rinnegan": "ninjutsu",
-    "tenseigan": "ninjutsu",
-    "wood_release": "earth",
-    "ice_release": "water",
-    "lava_release": "earth",
-    "magnet_release": "earth"
-}
-
-# --- Serve static files from root ---
+# --- Serve static files ---
 @app.route('/<path:filename>')
 def serve_file(filename):
-    safe_path = safe_join(BASE_DIR, filename)
-    if os.path.exists(safe_path):
+    path = os.path.join(BASE_DIR, filename)
+    if os.path.exists(path):
         return send_from_directory(BASE_DIR, filename)
-    else:
-        abort(404)
+    abort(404)
 
-# --- Web routes ---
-@app.route('/')
-def index():
-    with open("index.html", "r", encoding="utf-8") as f:
-        return render_template_string(f.read())
-
+# --- Game page ---
 @app.route('/game/<room_code>')
 def game(room_code):
     if room_code not in rooms:
-        return "Room not found!", 404
-    with open("game.html", "r", encoding="utf-8") as f:
-        return render_template_string(
-            f.read(),
-            room_code=room_code,
-            jutsus=jutsus,
-            kekkei_genkai=kekkei_genkai
-        )
+        return "Room not found",404
+    with open("game.html","r",encoding="utf-8") as f:
+        return render_template_string(f.read(), room_code=room_code, jutsus=jutsus, kekkei_genkai=kekkei_genkai)
 
-# --- Helper functions ---
-def generate_room_code():
-    return ''.join(random.choices(string.ascii_uppercase + string.digits, k=6))
-
-def determine_winner(p1_choice, p2_choice):
-    if p1_choice == p2_choice:
-        return 0  # tie
-    t1 = affinity[p1_choice]
-    t2 = affinity[p2_choice]
-    if type_chart[t1]["beats"] == t2:
-        return 1
-    elif type_chart[t1]["loses"] == t2:
-        return 2
-    else:
-        return 0  # neutral tie
-
-# --- Socket.IO events ---
-@socketio.on('create_room')
-def create_room(data):
-    nickname = data.get('nickname', 'Player')
-    room_code = generate_room_code()
-    rooms[room_code] = {
-        'players': {nickname: {'wins': 0, 'sid': request.sid}},  # store sid
-        'choices': [],
-        'round': 1,
-        'host': nickname
-    }
-    join_room(room_code)
-    emit('room_created', {'room_code': room_code})
-
-@socketio.on('join_room')
-def join_room_event(data):
-    nickname = data.get('nickname', 'Player')
+# --- SocketIO ---
+@socketio.on('join_game')
+def join_game(data):
+    playerNumber = data.get('playerNumber')
     room_code = data.get('room_code')
+    if room_code not in rooms:
+        rooms[room_code] = {'players':{}}
+    rooms[room_code]['players'][playerNumber] = True
+    if len(rooms[room_code]['players'])==2:
+        emit('show_start_button', room=room_code, broadcast=True)
 
-    if room_code in rooms and len(rooms[room_code]['players']) < 2:
-        is_host = len(rooms[room_code]['players']) == 1  # second player joining
-        rooms[room_code]['players'][nickname] = {'wins': 0, 'sid': request.sid}
-        join_room(room_code)
-
-        # Update host in case it was empty
-        if 'host' not in rooms[room_code] or not rooms[room_code]['host']:
-            rooms[room_code]['host'] = nickname if is_host else list(rooms[room_code]['players'].keys())[0]
-
-        emit('room_joined', {
-            'room_code': room_code,
-            'players': list(rooms[room_code]['players'].keys())
-        }, room=room_code)
-
-        # Show start button only to host
-        if len(rooms[room_code]['players']) == 2:
-            host_sid = rooms[room_code]['players'][rooms[room_code]['host']]['sid']
-            emit('show_start_button', to=host_sid)
-    else:
-        emit('error', 'Room full or does not exist.')
-
-# --- Manual start game ---
 @socketio.on('start_game_manual')
 def start_game_manual(data):
-    room_code = data['room_code']
-    room = rooms.get(room_code)
-    if not room or len(room['players']) < 2:
-        return  # Cannot start without 2 players
+    room_code = data.get('room_code')
+    emit('round_result_display', {'winner_choice':'rasengan','loser_choice':'chidori'}, room=room_code)
 
-    emit('status', "Game starting! Round 1. Select your Jutsu!", room=room_code)
-    emit('start_round', {'round': room['round']}, room=room_code)
-
-# --- Player move ---
 @socketio.on('play')
 def play(data):
     room_code = data['room_code']
     choice = data['choice']
-    nickname = data['nickname']
-    room = rooms.get(room_code)
-    if not room:
-        emit('error', 'Room not found.')
-        return
+    playerNumber = data['playerNumber']
+    if 'choices' not in rooms[room_code]:
+        rooms[room_code]['choices'] = {}
+    rooms[room_code]['choices'][playerNumber] = choice
+    if len(rooms[room_code]['choices'])==2:
+        choices = rooms[room_code]['choices']
+        # simple winner random for now
+        winner_choice = choices['1']
+        loser_choice = choices['2']
+        emit('round_result_display', {'winner_choice':winner_choice,'loser_choice':loser_choice}, room=room_code)
+        rooms[room_code]['choices'] = {}
 
-    room['choices'].append({'nickname': nickname, 'choice': choice})
-
-    if len(room['choices']) < 2:
-        emit('status', 'Waiting for other player...', room=room_code)
-        return
-
-    # --- Both players played ---
-    p1, p2 = room['choices']
-    result = determine_winner(p1['choice'], p2['choice'])
-
-    if result == 0:
-        room['choices'] = []
-        emit('tie', 'Tie! Both selected same or neutral.', room=room_code)
-        return
-
-    winner = p1 if result == 1 else p2
-    loser = p2 if result == 1 else p1
-
-    # Increment wins
-    if winner['nickname'] in room['players']:
-        room['players'][winner['nickname']]['wins'] += 1
-
-    room['round'] += 1
-    room['choices'] = []
-
-    # Sharingan evolution
-    if winner['choice'] == "sharingan" and room['players'][winner['nickname']]['wins'] >= 5:
-        winner['choice'] = "mangekyo_sharingan"
-
-    emit('round_result_display', {
-        'winner_name': winner['nickname'],
-        'loser_name': loser['nickname'],
-        'winner_choice': winner['choice'],
-        'loser_choice': loser['choice'],
-        'round': room['round'] - 1
-    }, room=room_code)
-
-# --- Run with Eventlet in Render ---
-if __name__ == "__main__":
+if __name__=="__main__":
     socketio.run(app, host="0.0.0.0", port=5000)
