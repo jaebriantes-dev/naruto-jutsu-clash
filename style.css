@@ -134,7 +134,6 @@ body {
   to { opacity: 1; transform: translateY(0); }
 }
 
-/* --- Winner/Loser overlays --- */
 #result-layer.show-winner {
   color: #00ff99;
   text-shadow: 0 0 25px #00ff99, 0 0 40px #00ff99;
@@ -151,7 +150,6 @@ body {
   opacity: 1;
 }
 
-/* --- Mobile support --- */
 @media (max-width: 768px) {
   .game-area {
     flex-direction: column;
