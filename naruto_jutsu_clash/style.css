@@ -1,0 +1,119 @@
+/* style.css - updated visuals for battlefield */
+* { box-sizing: border-box; }
+body {
+    font-family: "Segoe UI", Roboto, Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+    background: linear-gradient(#0f172a, #021024); /* dark battlefield feel */
+    color: #eef2ff;
+    min-height: 100vh;
+}
+
+/* top bar */
+.top-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 12px 18px;
+    background: rgba(0,0,0,0.25);
+    backdrop-filter: blur(4px);
+    border-bottom: 1px solid rgba(255,255,255,0.04);
+}
+.logo-small { width: 140px; height: auto; }
+.players-display { font-size: 14px; opacity: 0.9; }
+.round-display {
+    font-weight: 700;
+    font-size: 18px;
+    text-align: center;
+    padding: 6px 14px;
+    border-radius: 8px;
+    background: rgba(255,255,255,0.04);
+}
+
+/* layout */
+.game-area {
+    display: grid;
+    grid-template-columns: 1fr 360px;
+    gap: 12px;
+    padding: 20px;
+    align-items: start;
+}
+
+/* battlefield */
+.battlefield {
+    min-height: 520px;
+    background-image: url(''); /* optional: place a battlefield bg image in folder and put filename here */
+    background-color: rgba(10,14,24,0.6);
+    border-radius: 12px;
+    padding: 20px;
+    position: relative;
+    overflow: hidden;
+    border: 1px solid rgba(255,255,255,0.03);
+}
+
+/* layer for move images */
+.move-layer {
+    position: absolute;
+    inset: 0;
+    display:flex;
+    align-items: center;
+    justify-content: center;
+    gap: 40px;
+    pointer-events: none;
+}
+.move-img {
+    border-radius: 8px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.6);
+    transform-origin: center;
+}
+
+/* result icons */
+.result-layer {
+    position: absolute;
+    inset: 0;
+    display:flex;
+    align-items: flex-end;
+    justify-content: center;
+    pointer-events: none;
+}
+.status-icon { width: 120px; opacity: 0.95; }
+
+/* controls (choices) */
+.controls {
+    padding: 12px;
+}
+.choices-grid {
+    display: grid;
+    grid-template-columns: repeat(1, 1fr);
+    gap: 8px;
+    max-height: 420px;
+    overflow-y: auto;
+}
+.choice-btn {
+    background: linear-gradient(90deg,#1f2937,#0b1220);
+    border: 1px solid rgba(255,255,255,0.04);
+    color: #e6f2ff;
+    padding: 10px;
+    border-radius: 8px;
+    cursor: pointer;
+    text-align: left;
+    transition: transform 120ms ease, box-shadow 120ms ease;
+    font-weight: 600;
+}
+.choice-btn:hover { transform: translateY(-3px); box-shadow: 0 6px 20px rgba(0,0,0,0.6); }
+.choice-btn:disabled { opacity: 0.45; cursor: not-allowed; transform: none; }
+
+/* result text */
+.result-text {
+    margin-top: 12px;
+    background: rgba(0,0,0,0.25);
+    padding: 10px;
+    border-radius: 8px;
+}
+
+/* responsive */
+@media (max-width: 900px) {
+    .game-area { grid-template-columns: 1fr; }
+    .controls { order: 2; }
+}
