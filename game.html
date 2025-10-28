@@ -30,21 +30,15 @@
     <audio id="main_music" src="/main.mp3" loop autoplay></audio>
     <audio id="personal_effect"></audio>
 
-    <script>
+<script>
         const roomCode = "{{ room_code }}";
         const jutsus = {{ jutsus|tojson }};
         const kekkei = {{ kekkei_genkai|tojson }};
-
-        // Save nickname for reuse (from index.html)
-        if (!localStorage.getItem("nickname")) {
-            const n = prompt("Enter your nickname:") || "Player";
-            localStorage.setItem("nickname", n);
-        }
-
-        const nickname = localStorage.getItem("nickname");
+        
+        // Removed the nickname declaration to fix the Uncaught SyntaxError
     </script>
-
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.1/socket.io.min.js"></script>
+    <script src="/socket.io/socket.io.js"></script>
     <script src="/main.js"></script>
 </body>
 </html>
+
