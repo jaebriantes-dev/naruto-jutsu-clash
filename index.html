@@ -4,7 +4,6 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Naruto Jutsu Clash</title>
-  <!-- ✅ Absolute paths for Render deployment -->
   <link rel="stylesheet" href="/style.css">
   <style>
     body {
@@ -61,7 +60,6 @@
 </head>
 
 <body>
-  <!-- ✅ Serve logo from root, not relative -->
   <img src="/logo.png" alt="Logo" class="logo">
   
   <div class="menu-box">
@@ -73,16 +71,12 @@
     <small>Round 50 unlocks Kekkei Genkai power!</small>
   </div>
 
-  <!-- ✅ Menu music (absolute path) -->
   <audio id="menu_music" src="/menu.mp3" loop autoplay></audio>
 
-  <!-- ✅ Socket.IO -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.1/socket.io.min.js"></script>
-
   <script>
     const socket = io();
     
-    // ✅ Allow user interaction before playing audio (for Chrome)
     document.addEventListener('click', () => {
       const audio = document.getElementById('menu_music');
       if (audio && audio.paused) audio.play().catch(()=>{});
