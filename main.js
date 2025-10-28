@@ -1,5 +1,6 @@
 // main.js - game front-end logic
-const socket = io();
+// --- Use explicit server URL if needed ---
+const socket = io('https://naruto-ability-clash.onrender.com'); 
 let room = "";
 let nickname = localStorage.getItem("nickname") || "";
 let currentRound = 1;
@@ -165,7 +166,7 @@ socket.on('round_result_display', data => {
 // Error event
 socket.on('error', msg => setResultText("Error: " + msg));
 
-// === NEW: Game Start/Start Round Handler ===
+// --- NEW: Game Start/Start Round Handler ---
 socket.on('start_round', data => {
     document.getElementById("round").innerText = `Round ${data.round}`;
     showChoices(data.round); 
